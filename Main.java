@@ -5,8 +5,6 @@ public class Main {
 		Catalog gambitList = new Catalog("In The Fray");
 		Gambit gambitPanel = new Gambit("MainPanel");
 		gambitList.buildGambitsFromFile("GambitList");
-		UI ui = new UI(gambitPanel, gambitList);
-		
-		gambitList.printList();
+		new UI(gambitPanel, gambitList);
 	}
 }

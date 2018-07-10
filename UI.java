@@ -2,7 +2,12 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-public class UI extends JFrame implements WindowListener, ActionListener {
+public class UI extends JFrame implements WindowListener {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1637374530271121119L;
+	
 	Label title, a, b, c, d, e, info1,info2;
 	Label[] list;
 	Catalog gambitList;
@@ -13,14 +18,18 @@ public class UI extends JFrame implements WindowListener, ActionListener {
 			button31, button32, button33,
 			infoPopup;
 	Gambit gambitPanel;
+	boolean popupOpen;
 	
+	Font f_head = new Font("Arial", Font.BOLD, 13);
+	Font f_title = new Font("Arial", Font.BOLD, 15);
+	Font f_special = new Font("Arial", Font.ITALIC, 13);
 
 	public UI(Gambit _gambitPanel, Catalog _gambitList) {
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		JPanel infoPanel = new JPanel();
 		infoPanel.setLayout(new GridLayout(3,1));
-		
+		popupOpen = false;
 		
 		//Components
 		topBar = new JPanel();
@@ -79,6 +88,7 @@ public class UI extends JFrame implements WindowListener, ActionListener {
 		build.setSize(500,200);
 		title.setSize(500,200);
 		setResizable(false);
+		infoPopup.setFocusable(false);
 		
 		
 		//Colors
@@ -104,7 +114,13 @@ public class UI extends JFrame implements WindowListener, ActionListener {
 											button31,button32,button33};
 		for(int i = 0; i < buttonList.length; i++) {
 			buttonList[i].setBackground(gray);
+			buttonList[i].setFont(f_head);
 		}
+		for(int i = 0; i < list.length; i++) {
+			list[i].setFont(f_title);
+		}
+		title.setFont(f_title);
+		info1.setFont(f_special);
 		infoPopup.setBackground(new Color(0,170,250));
 		infoPopup.setForeground(white);
 		info1.setBackground(black);
@@ -163,6 +179,11 @@ public class UI extends JFrame implements WindowListener, ActionListener {
 		im.put(KeyStroke.getKeyStroke(keyCode, 0, false), id);
 		
 		ap.put(id, new AbstractAction() {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 6649556706054503566L;
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				lambda.actionPerformed(e);
@@ -177,6 +198,11 @@ public class UI extends JFrame implements WindowListener, ActionListener {
 		im.put(KeyStroke.getKeyStroke(keyCode, mask, false), id);
 		
 		ap.put(id, new AbstractAction() {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = -7005596894933631313L;
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				lambda.actionPerformed(e);
@@ -199,9 +225,16 @@ public class UI extends JFrame implements WindowListener, ActionListener {
     	updateUI();
     }
     
+    public void closePopup() {
+    	popupOpen = false;
+    }
+    
     public void popupWindow() {
-    	PopUp newWindow = new PopUp(gambitList);
-    	newWindow.buildList();
+    	if(!popupOpen) {
+    		popupOpen = true;
+	    	PopUp newWindow = new PopUp(this,gambitList);
+	    	newWindow.buildList();
+	    }
     }
     
     //String Breakers

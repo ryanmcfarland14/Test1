@@ -10,7 +10,7 @@ public class Catalog {
 	//Constructor
 	public Catalog(String _name) {
 		list = new Gambit[0];
-		name = _name;
+		setName(_name);
 	}
 	
 	
@@ -76,5 +76,15 @@ public class Catalog {
 		} catch(FileNotFoundException e) {
 			System.out.println("ERROR: no file (" + file + ") found!");
 		}
+	}
+
+
+	public String getName() {
+		return name;
+	}
+
+
+	public void setName(String name) {
+		this.name = name;
 	}
 }
