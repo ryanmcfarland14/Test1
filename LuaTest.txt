@@ -9,8 +9,8 @@ char = player.Character
 head = char.Head
 torso = char.UpperTorso
 
-frame_gap_horizontal = 0.2
-frame_gap_vertical = 0.2
+frame_gap_horizontal = 0.1
+frame_gap_vertical = 0.1
 constraints_horizontal = 50
 constraints_vertical = 50
 
