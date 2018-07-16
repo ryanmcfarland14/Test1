@@ -1,14 +1,37 @@
 wait(2)
 
 frame = script.Parent
---Frame Size (0.9,0,0.8,0)
+--Frame Size (0.8,0,0.8,0)
 
 player = game.Player.LocalPlayer
 mouse = player:GetMouse()
 char = player.Character
 head = char.Head
+torso = char.UpperTorso
+
+frame_gap_horizontal = 0.2
+frame_gap_vertical = 0.2
+constraints_horizontal = 50
+constraints_vertical = 50
 
 mouse.Move():connect(function()
-	headHeight = head.Orientation.Z
-	frame.TweenPosition(UDim2.new(0,0,headHeight/90*0.2,0), "Out", "Quad")
+	local x_head = head.Orientation.X
+	local y_head = head.Orientation.Y
+	local z_head = head.Orientation.Z
+	local x_torso = torso.Orientation.X
+	local y_torso = torso.Orientation.Y
+	local z_torso = torso.Orientation.Z
+	
+	--Tween Logic
+	local x_rel = x_head - x_torso
+	local x_tween = -x_rel/constraints_horizontal*frame_gap_horizontal
+	local y_tween
+	if(math.abs(y_head)>math.abs(z_head)) then
+		y_tween = -y_head/constraints_vertical*frame_gap_vertical
+	else
+		y_tween = -z_head/constraints_vertical*frame_gap_vertical
+	end
+	
+	--TweenTo
+	frame.TweenPosition(UDim2.new(x_tween,0,y_tween,0), "Out", "Quad")
 end)
