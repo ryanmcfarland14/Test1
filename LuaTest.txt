@@ -1,0 +1,14 @@
+wait(2)
+
+frame = script.Parent
+--Frame Size (0.9,0,0.8,0)
+
+player = game.Player.LocalPlayer
+mouse = player:GetMouse()
+char = player.Character
+head = char.Head
+
+mouse.Move():connect(function()
+	headHeight = head.Orientation.Z
+	frame.TweenPosition(UDim2.new(0,0,headHeight/90*0.2,0), "Out", "Quad")
+end)
