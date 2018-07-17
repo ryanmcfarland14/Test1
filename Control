@@ -1,0 +1,249 @@
+--Control the character Customization Hub
+
+
+wait(2)
+--Variables
+repStorage = game:GetService("ReplicatedStorage")
+customizationOptions = repStorage:WaitForChild("CharacterCustomization")
+player = game.Players.LocalPlayer
+playerName = player.Name
+playerData = repStorage:WaitForChild("PlayerData")
+playerFolder = playerData.PlayerList:WaitForChild(playerName).Character
+	player_race = playerFolder.Race.Value
+	player_gender = playerFolder.Gender.Value
+frame_main = script.Parent:FindFirstChild(player_race)
+optionFrames = frame_main:FindFirstChild(player_gender)
+frame_options = frame_main.OptionsFrame
+
+--Insert
+hub = customizationOptions:FindFirstChild(player_race).CharacterCustomizationHub:Clone()
+hub.Parent = game.Workspace
+	display_char = hub.BodyTemplate
+	display_head = display_char.Head
+
+
+--Functions
+function setFace(item)
+	local faceID = item.Image
+	local detailID = item.Detail.Image
+	display_head.Face.Texture = faceID
+	display_head.Detail.Texture = detailID
+end
+
+function openMain()
+	frame_options:TweenPosition(UDim2.new(0,0,0,0), "Out", "Quad")
+	wait(1)
+	frame_options.Face:TweenPosition(UDim2.new(0,0,0.3,0), "Out", "Quad")
+	wait(0.5)
+	frame_options.Hair:TweenPosition(UDim2.new(0,0,0.45,0), "Out", "Quad")
+	wait(0.5)
+	frame_options.Skin:TweenPosition(UDim2.new(0,0,0.6,0), "Out", "Quad")
+end
+
+function closeMain()
+	frame_options.Face:TweenPosition(UDim2.new(-1,0,0.3,0), "In", "Quad")
+	frame_options.Hair:TweenPosition(UDim2.new(-1,0,0.45,0), "In", "Quad")
+	frame_options.Skin:TweenPosition(UDim2.new(-1,0,0.6,0), "In", "Quad")
+	wait(0.5)
+	frame_options:TweenPosition(UDim2.new(-1,0,0,0), "In", "Quad")
+end
+
+function openOption(frame)
+	frame:TweenPosition(UDim2.new(0.7,0,0,0), "Out", "Quad")
+end
+
+function closeOption(frame)
+	frame:TweenPosition(UDim2.new(1,0,0,0), "In", "Quad")
+end
+
+function closeAllOptions()
+	for i, v in pairs(optionFrames:GetChildren()) do
+		if v.ClassName == "Frame" then
+			closeOption(v)
+		end
+	end
+end
+
+function paintCharacter(item)
+	for i, v in pairs(display_char:GetChildren()) do
+		if v.ClassName == "MeshPart" or v.ClassName == "Part" then
+			v.Color = item.BackgroundColor3
+		end
+	end
+end
+
+function unlockModel(model)
+	for i, v in pairs(model:GetChildren()) do
+		if v.ClassName == "Part" or v.ClassName == "MeshPart" then
+			v.Anchored = false
+			v.CanCollide = false
+		elseif v.ClassName == "Model" then
+			unlockModel(v)
+		end
+	end
+end
+function clearHats()
+	for i, v in pairs(display_char:GetChildren()) do
+		if v:FindFirstChild("is_HAT") then
+			v:Destroy()
+		end
+	end
+end
+
+function weldToHead(item)
+	local newItem = item:Clone()
+	unlockModel(newItem)
+	local target = nil
+	local head = nil
+	for i,v in pairs(newItem:GetChildren()) do
+		if v.Name == "Head" then
+			v:ClearAllChildren()
+			v.Transparency = 1
+			v.CanCollide = false
+			v.Anchored = false
+			head = v
+		elseif v.ClassName == "Model" then
+			target = v:FindFirstChildOfClass("Part")
+		elseif v.ClassName == "Part" or v.ClassName == "MeshPart" or v.ClassName == "Union" then
+			target = v
+		end
+	end
+	
+
+	
+	
+	newItem.Parent = display_char	
+	
+	local weld_item = Instance.new("Weld")
+	weld_item.Parent = head
+	weld_item.Part0 = head
+	weld_item.Part1 = display_head
+	weld_item.Name = "weld_"..item.Name
+	weld_item.C0 = CFrame.new(0, 0, 0) *CFrame.new(0, 0, 0)
+	
+	local tag = Instance.new("BoolValue")
+	tag.Name = "is_HAT"
+	tag.Parent = newItem
+	
+	head.CFrame = display_head.CFrame
+	
+		local weld_Bits = Instance.new("Weld")
+	weld_Bits.Parent = head
+	weld_Bits.Part1 = target
+	weld_Bits.Part0 = head
+	weld_Bits.C0 = CFrame.new(0, 0, 0) *CFrame.new(0, 0, 0)
+	
+
+
+	
+end
+
+
+
+
+
+
+--Bindings
+--Face bindings
+for i, v in pairs(optionFrames.Face.FaceChoice:GetChildren()) do
+	if v.Name == "Item" then
+		v.MouseButton1Click:connect(function()
+			setFace(v)
+		end)
+	end
+end
+for i, v in pairs(optionFrames.Face.ColorChoice.Frame:GetChildren()) do
+	if v.Name == "Item" then
+		v.MouseButton1Click:connect(function()
+			display_head.Detail.Color3 = v.BackgroundColor3
+		end)
+	end
+end
+--Skin
+for i, v in pairs(optionFrames.Skin.ColorChoice.Frame:GetChildren()) do
+	if v.Name == "Item" then
+		v.MouseButton1Click:connect(function()
+			paintCharacter(v)
+		end)
+	end
+end
+--Hair
+for i, v in pairs(optionFrames.Hair.HairChoice:GetChildren()) do
+	if v.Name == "Item" then
+		v.MouseButton1Click:connect(function()
+			clearHats()
+			weldToHead(v.Reference.Value)
+		end)
+	end
+end
+
+--Backups
+optionFrames.Face.BackButton.MouseButton1Click:connect(function()
+	closeAllOptions()
+	openMain()
+end)
+optionFrames.Skin.BackButton.MouseButton1Click:connect(function()
+	closeAllOptions()
+	openMain()
+end)
+optionFrames.Hair.BackButton.MouseButton1Click:connect(function()
+	closeAllOptions()
+	openMain()
+end)
+
+
+frame_options.Face.MouseButton1Click:connect(function()
+	closeMain()
+	openOption(optionFrames.Face)
+end)
+frame_options.Skin.MouseButton1Click:connect(function()
+	closeMain()
+	openOption(optionFrames.Skin)
+end)
+frame_options.Hair.MouseButton1Click:connect(function()
+	closeMain()
+	openOption(optionFrames.Hair)
+end)
+
+frame_options.Male.MouseButton1Click:connect(function()
+	playerFolder.Gender.Value = "Male"
+	optionFrames = frame_main.Male
+end)
+frame_options.Female.MouseButton1Click:connect(function()
+	playerFolder.Gender.Value = "Female"
+	optionFrames = frame_main.Female
+end)
+
+
+
+image_on = "rbxassetid://2081766030"
+image_off = "rbxassetid://2081745678"
+function hideAllButtonLights()
+	frame_options.Face.Image = image_off
+	frame_options.Hair.Image = image_off
+	frame_options.Skin.Image = image_off
+end
+--Hovers
+frame_options.Face.MouseEnter:connect(function()
+	frame_options.Face.Image = image_on
+end)
+frame_options.Face.MouseLeave:connect(function()
+	hideAllButtonLights()
+end)
+frame_options.Hair.MouseEnter:connect(function()
+	frame_options.Hair.Image = image_on
+end)
+frame_options.Hair.MouseLeave:connect(function()
+	hideAllButtonLights()
+end)
+frame_options.Skin.MouseEnter:connect(function()
+	frame_options.Skin.Image = image_on
+end)
+frame_options.Skin.MouseLeave:connect(function()
+	hideAllButtonLights()
+end)
+
+
+
+--Startup
+closeAllOptions()
