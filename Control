@@ -27,6 +27,17 @@ hub.Parent = game.Workspace
 
 
 --Functions
+name_pre = {"No","Ko","Oka","Saka","Asa","Mae","Yoko","Nishi","Kita","Kuro","Iwa","Ishu","Ishi","Matsu","Sugi","Take","Ki","Yama","Kino","Ita","Ito","Yone","Hayashi","Bayashi","Naka","Ue","Kami","Shita","Shimo","Shino","Hashi","Bashi","Mori","Tsuka","Mizu"}
+name_suf = {"guchi","ri","mi","kami","shiro","tani","da","shina","shima","zawa","jima","mura","saki","zaki","moto","ta","shi","ke","no","wa"}
+function randomName()
+	local preCount = table.getn(name_pre)
+	local sufCount = table.getn(name_suf)
+	local random_pre = math.random(preCount)
+	local random_suf = math.random(sufCount)
+	
+	local newName = name_pre[random_pre] .. name_suf[random_suf]
+	return newName
+end
 function setFace(item)
 	local faceID = item.Image
 	local detailID = item.Detail.Image
