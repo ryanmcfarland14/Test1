@@ -20,6 +20,10 @@ hub = customizationOptions:FindFirstChild(player_race).CharacterCustomizationHub
 hub.Parent = game.Workspace
 	display_char = hub.BodyTemplate
 	display_head = display_char.Head
+	display_HairContainer = display_char.HairContainer
+	display_DetailContainer = display_char.DetailContainer
+	display_configs = display_char.Configurations
+		config_name = display_configs.PlayerName
 
 
 --Functions
@@ -77,20 +81,20 @@ function unlockModel(model)
 		if v.ClassName == "Part" or v.ClassName == "MeshPart" then
 			v.Anchored = false
 			v.CanCollide = false
-		elseif v.ClassName == "Model" then
+		elseif v.ClassName == "Model" or v.ClassName == "Folder" then
 			unlockModel(v)
 		end
 	end
 end
 function clearHats()
-	for i, v in pairs(display_char:GetChildren()) do
-		if v:FindFirstChild("is_HAT") then
-			v:Destroy()
-		end
-	end
+	display_HairContainer:ClearAllChildren()
 end
 
-function weldToHead(item)
+function clearHats()
+	display_DetailContainer:ClearAllChildren()
+end
+
+function weldToHead(item,container)
 	local newItem = item:Clone()
 	unlockModel(newItem)
 	local target = nil
@@ -109,33 +113,25 @@ function weldToHead(item)
 		end
 	end
 	
+	
+	newItem.Parent = container
+	
+	local weld = Instance.new("Weld")
+	weld.Parent = head
+	weld.Part0 = head
+	weld.Part1 = display_head
+	weld.C0 = CFrame.new(0, 0, 0) *CFrame.new(0, 0, 0) --Positioning
+	
+end
 
-	
-	
-	newItem.Parent = display_char	
-	
-	local weld_item = Instance.new("Weld")
-	weld_item.Parent = head
-	weld_item.Part0 = head
-	weld_item.Part1 = display_head
-	weld_item.Name = "weld_"..item.Name
-	weld_item.C0 = CFrame.new(0, 0, 0) *CFrame.new(0, 0, 0)
-	
-	local tag = Instance.new("BoolValue")
-	tag.Name = "is_HAT"
-	tag.Parent = newItem
-	
-	head.CFrame = display_head.CFrame
-	
-		local weld_Bits = Instance.new("Weld")
-	weld_Bits.Parent = head
-	weld_Bits.Part1 = target
-	weld_Bits.Part0 = head
-	weld_Bits.C0 = CFrame.new(0, 0, 0) *CFrame.new(0, 0, 0)
-	
-
-
-	
+function colorThisThat(item,color)
+	if item.ClassName == "Part" or item.ClassName == "MeshPart" then
+		item.Color = color
+	elseif item.ClassName == "Model" or item.ClassName == "Folder" then
+		for i, v in pairs(item:GetChildren()) do
+			colorThisThat(v, color)
+		end
+	end
 end
 
 
@@ -172,12 +168,35 @@ for i, v in pairs(optionFrames.Hair.HairChoice:GetChildren()) do
 	if v.Name == "Item" then
 		v.MouseButton1Click:connect(function()
 			clearHats()
-			weldToHead(v.Reference.Value)
+			weldToHead(v.Reference.Value,display_HairContainer)
+		end)
+	end
+end
+for i, v in pairs(optionFrames.Hair.ColorChoice:GetChildren()) do
+	if v.Name == "Item" then
+		v.MouseButton1Click:connect(function()
+			colorThisThat(display_HairContainer,v.BackgroundColor3)
+		end)
+	end
+end
+--Details
+for i, v in pairs(optionFrames.Hair.HairChoice:GetChildren()) do
+	if v.Name == "Item" then
+		v.MouseButton1Click:connect(function()
+			clearDetails()
+			weldToHead(v.Reference.Value,display_DetailContainer)
+		end)
+	end
+end
+for i, v in pairs(optionFrames.Hair.ColorChoice:GetChildren()) do
+	if v.Name == "Item" then
+		v.MouseButton1Click:connect(function()
+			colorThisThat(display_DetailContainer,v.BackgroundColor3)
 		end)
 	end
 end
 
---Backups
+--Back Buttons
 optionFrames.Face.BackButton.MouseButton1Click:connect(function()
 	closeAllOptions()
 	openMain()
@@ -190,8 +209,12 @@ optionFrames.Hair.BackButton.MouseButton1Click:connect(function()
 	closeAllOptions()
 	openMain()
 end)
+optionFrames.Details.BackButton.MouseButton1Click:connect(function()
+	closeAllOptions()
+	openMain()
+end)
 
-
+--Openers
 frame_options.Face.MouseButton1Click:connect(function()
 	closeMain()
 	openOption(optionFrames.Face)
@@ -204,7 +227,12 @@ frame_options.Hair.MouseButton1Click:connect(function()
 	closeMain()
 	openOption(optionFrames.Hair)
 end)
+frame_options.Details.MouseButton1Click:connect(function()
+	closeMain()
+	openOption(optionFrames.Hair)
+end)
 
+--Gender options
 frame_options.Male.MouseButton1Click:connect(function()
 	playerFolder.Gender.Value = "Male"
 	optionFrames = frame_main.Male
@@ -242,7 +270,12 @@ end)
 frame_options.Skin.MouseLeave:connect(function()
 	hideAllButtonLights()
 end)
-
+frame_options.Details.MouseEnter:connect(function()
+	frame_options.Details.Image = image_on
+end)
+frame_options.Details.MouseLeave:connect(function()
+	hideAllButtonLights()
+end)
 
 
 --Startup
