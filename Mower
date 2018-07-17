@@ -1,0 +1,247 @@
+--Setup
+player = game.Players.LocalPlayer
+character = player.CharacterAdded:wait()
+playerName = player.Name
+
+
+--Variables
+part = character:WaitForChild("DiggerPart")
+digging = part.Digging
+
+local repStorage = game:GetService("ReplicatedStorage")
+
+playerStats = repStorage.PlayerStats.PlayerList:WaitForChild(playerName)
+	p_delay = playerStats.Delay
+	p_power = playerStats.Power
+	p_cMult = playerStats.CollectMult
+	p_mMult = playerStats.MoneyMult
+	p_capacity = playerStats.Capacity
+	p_current = p_capacity.Current
+	p_cash = playerStats.Cash
+	p_collected = playerStats.Collected
+	p_primaryColor = playerStats.PrimaryColor
+	p_backpackType = playerStats.BackpackType
+	p_toolType = playerStats.ToolType
+	p_secondaryColor = playerStats.SecondaryColor
+	p_toolEquipped = playerStats.ToolEquipped
+	
+leaderStats = player:WaitForChild("leaderstats")
+	stats_collected = leaderStats.Collected
+	stats_cash = leaderStats.Cash
+	
+backpackList = repStorage:WaitForChild("Backpacks")
+toolList = repStorage:WaitForChild("Tools")
+packContainer = character:WaitForChild("packContainer")
+backpack = player.Backpack
+	
+--Debounce
+sellDeb = false
+
+
+--Update the leaderstats
+function update()
+	stats_collected.Value = displayNumber(p_collected.Value)
+	stats_cash.Value = displayNumber(p_cash.Value)
+end
+
+
+--Round to a certain Decimal
+function round(x, places)
+	local shift = 10 ^ places
+	return math.floor( x*shift + 0.5 ) / shift
+end
+
+
+--Returns a nicer number in String
+nums = {"","k","M","B","T","q","Q"}
+function displayNumber(x)
+	local currentIndex = 1
+	local num = x
+	while(num/1000 > 1) do
+		currentIndex = currentIndex + 1
+		num = num/1000
+	end
+	
+	return round(num,1)..nums[currentIndex]
+end
+
+
+--Collect or remove an amount
+function collect(amount)
+	p_collected.Value = p_collected.Value + amount
+	p_current.Value = p_current.Value + amount
+	if p_current.Value > p_capacity.Value then
+		print("Full bag")
+		p_collected.Value = p_collected.Value - (p_current.Value - p_capacity.Value)
+		p_current.Value = p_capacity.Value
+	elseif p_current.Value < 0 then
+		p_current.Value = 0
+	end
+	
+	--Check Collections
+	if amount < 0 then
+		p_collected.Value = p_collected.Value - amount
+	end
+	
+	update()
+	updateBackpack()
+end
+
+
+--Add or remove cash
+function cash(amount)
+	p_cash.Value = p_cash.Value + amount
+	if p_cash.Value < 0 then
+		p_cash.Value = 0
+	end
+	
+	update()
+end
+
+
+--Equip a tool
+function equipTool(tool)
+	--Wipe tool
+	if character:findFirstChildOfClass("Tool") then
+		if character:findFirstChildOfClass("Tool"):FindFirstChild("onlyOne") then
+			character:findFirstChildOfClass("Tool"):Destroy()
+		end
+	end
+	for i, v in pairs(backpack:GetChildren()) do
+		if v:findFirstChild("onlyOne") then
+			v:Destroy()
+		end
+	end
+	--Add Tool
+	local newTool = toolList:findFirstChild(p_toolType.Value):Clone()
+	for i, v in pairs(newTool:GetChildren()) do
+		if v.Name == "Color" then
+			v.BrickColor = p_secondaryColor.Value
+		end
+	end
+	newTool.Parent = backpack
+	newTool.Handle.Anchored = false
+	--Update Stats
+	local newPower = newTool.Configuration.Power.Value
+	p_power.Value = newPower
+	p_toolType.Value = backpack.Name
+end
+
+
+--Equip a backpack
+function equipBackpack(backpack)
+	packContainer:ClearAllChildren()
+	local pack = backpackList:findFirstChild(backpack):Clone()
+	for i, v in pairs(pack:GetChildren()) do
+		if v.Name == "Color" then
+			v.BrickColor = p_primaryColor.Value
+		end
+	end
+	pack.Parent = packContainer
+	local mainPart = pack.Base
+	mainPart.Anchored = false
+	local weld = Instance.new("Weld")
+	weld.Parent = mainPart
+	weld.Part0 = mainPart
+	weld.Part1 = character["UpperTorso"]
+	weld.C0 = CFrame.new(0, 0, 0) *CFrame.new(0, 0, 0) --Positioning
+	
+	--Set Stats
+	local newCap = pack.Configuration.Capacity.Value
+	p_capacity.Value = newCap
+	p_backpackType.Value = pack.Name
+end
+
+
+--Update the backpack
+function updateBackpack()
+	local currentPack = packContainer:FindFirstChildOfClass("Model")
+	local display = currentPack.Counter.SurfaceGui
+		local text = display.TextLabel
+		local frame = display.Frame
+			
+	text.Text = displayNumber(p_current.Value).."/"..displayNumber(p_capacity.Value)
+	print("Backpack: " ..text.Text)
+	frame:TweenSize(UDim2.new(p_current.Value/p_capacity.Value,0,1,0),"Out","Quad")
+	if p_current.Value == p_capacity.Value then
+		wait(0.5)
+		frame:TweenSize(UDim2.new(1,0,1,0),"Out","Quad")
+	end
+end
+
+
+
+--Triggers
+part.Touched:connect(function(hit)
+	
+	--Dig Something
+	if hit.Name == "DigPart" then
+		if p_toolEquipped.Value then
+			local maxCheck = false
+			if p_current.Value >= p_capacity.Value then
+				maxCheck = true
+			end
+			
+			if not maxCheck then
+				if hit.Digs.Value > 0 then
+					if not digging.Value then
+						digging.Value = true
+						collect(p_power.Value*p_cMult.Value) --Collect Material
+						hit.Digs.Value = hit.Digs.Value - 1
+						hit.CFrame = hit.CFrame + Vector3.new(0,-0.5,0)
+						if hit.Digs.Value == 0 then
+							hit.Transparency = 1
+						end
+						
+						wait(p_delay.Value)
+						digging.Value = false
+					end 
+				end
+			end
+		end
+	end
+	
+	--Sell All
+	if hit.Name == "SellTrigger" then
+		if not sellDeb then
+			sellDeb = true
+			if p_current.Value > 0 then
+				local amount = p_current.Value*p_cMult.Value
+				cash(amount)
+				collect(-p_current.Value)
+				
+				--Display Over Head
+				local gui = script.SellGUI:Clone()
+				for i, v in pairs(gui.Frame:GetChildren()) do
+					v.Text = "+$"..displayNumber(amount)
+				end
+				gui.Parent = character
+				gui.Adornee = character.Head
+				gui.Enabled = true
+				local frame = gui.Frame
+				local smooth = 50
+				local elapsed = 1
+				local distance = 5
+				for i = 1, smooth do
+					gui.StudsOffset =	gui.StudsOffset + Vector3.new(0,distance/(smooth+i*2),0)
+					for i, v in pairs(frame:GetChildren()) do
+						v.TextStrokeTransparency = v.TextStrokeTransparency + 1/smooth
+						v.TextTransparency = v.TextTransparency + 1/smooth
+					end
+					wait(elapsed/smooth)
+				end
+				gui:Destroy()
+				
+			end
+		end
+		wait(1)
+		sellDeb = false
+	end
+	
+end)
+
+
+--Start Commands
+equipBackpack(p_backpackType.Value)
+equipTool(p_toolType.Value)
+updateBackpack()
