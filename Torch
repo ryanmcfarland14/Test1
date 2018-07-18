@@ -1,0 +1,254 @@
+--[[
+Torch
+	[SCRIPT]
+		Burn
+			KillScript
+	Config
+		isGripped
+		isLit
+		isSwinging
+		canSpread - true
+	Handle
+		[All Sounds - Woosh, Thump, Burn, Sizzle]
+		[All Welds]
+		BodyVelocity?
+	GripArea
+	FireArea
+		Light
+		Fire
+]]
+
+DEBUG = true
+
+--Variables
+_fireFadeTimeIN = 3
+_fireFadeTimeOUT = 2
+_fireFadeFPS = 30
+_fireBrightness = 10
+_fireRange = 10
+_swingSpeed = 20
+_swingDelay = 1
+_baseDamage = 5
+_maxDamage = 20
+
+--Components
+bin = script.Parent
+handle = bin.Handle
+	sound_Woosh = handle.Woosh
+	sound_Burn = handle.Burn
+	sound_Thump = handle.Thump
+	sound_Sizzle = handle.Sizzle
+gripArea = bin.GripArea
+fireArea = bin.FireArea
+	fire_effect = fireArea.Fire
+	fire_light = fireArea.Light
+config = bin.Config
+	config_isGripped = config.isGripped
+	config_isLit = config.isLit
+	config_canSpread = config.canSpread
+	config_isSwinging = config.isSwinging
+	
+--Getters
+function isGripped()
+	return config_isGripped.Value
+end
+
+function isLit()
+	return config_isLit.Value
+end
+
+function canSpread()
+	return config_canSpread.Value
+end
+
+function isSwinging()
+	return config_isSwinging.Value
+end
+
+function getSpeed()
+	local x,y,z = math.abs(handle.Velocity.X),math.abs(handle.Velocity.Y),math.abs(handle.Velocity.Z)
+	return x+y+z
+end
+
+--Setters
+function setGripped(value)
+	config_isGripped.Value = value
+end
+
+function setLit(value)
+	config_isLit.Value = value
+end
+
+function setSpread(value)
+	config_canSpread.Value = value
+end
+
+function setSwinging(value)
+	config_setSwinging.Value = value
+end
+
+--Sounds
+function playTweaked(sound)
+	sound.PlaybackSpeed = 1 + math.random()
+	sound:Play()
+end
+
+maxVolume = 2
+function playAtVelocity(sound)
+	local speed = getSpeed()
+	sound.Volume = 1 + speed/10
+	if sound.Volume > maxVolume then
+		sound.Volume = maxVolume
+	end
+	playTweaked(sound)
+end
+
+--Functions
+function fadeLight(fadeType)
+	local totalFrames = fadeType*_fireFadeFPS
+	for i = 1, math.abs(totalFrames) do
+		fire_light.Range = fire_light.Range + _fireRange/(totalFrames)
+		fire_light.Brightness = fire_light.Brightness + _fireBrightness/(totalFrames)
+		wait(1/_fireFadeFPS)
+	end
+	if fadeType>=0 then
+		fire_light.Range = _fireRange
+		fire_light.Brightness = _fireBrightness
+	else
+		fire_light.Range = 0
+		fire_light.Brightness = 0
+	end
+end
+
+deb_fire = false
+function fireOn()
+	if not deb_fire then
+		playTweaked(sound_Woosh)
+		sound_Burn:Play()
+		deb_fire = true
+		setLit(true)
+		fire_effect.Enabled = true
+		fire_light.Enabled = true
+		fadeLight(_fireFadeTimeIN)
+		deb_fire = false
+	end
+end
+
+function fireOff()	
+	if not deb_fire then
+		playTweaked(sound_Sizzle)
+		sound_Burn:Stop()
+		deb_fire = true
+		fire_effect.Enabled = false
+		fadeLight(_fireFadeTimeOUT)
+		fire_light.Enabled = false
+		setLit(false)
+		deb_fire = false
+	end
+end
+
+function toggleFire()
+	--Toggle off
+	if isLit() then
+		fireOn()
+	--Toggle on
+	else
+		fireOff()
+	end
+end
+
+deb_swing = false
+function swing()
+	if not deb_swing then
+		deb_swing = true
+		setSwinging(true)
+		playTweaked(sounds_Woosh)
+		wait(_swingDelay)
+		setSwinging(false)
+		deb_swing = false
+	end
+end
+
+function dealDamage(humanoid)
+	local speed = getSpeed()
+	local damage = _baseDamage + speed/10
+	if damage > _maxDamage then
+		damage = _maxDamage
+	end
+	humanoid.Health = humanoid.Health - damage
+	
+	if DEBUG then
+		print(damage.." Damage dealt to "..humanoid.Parent.Name)
+	end
+end
+
+function burn(part)
+	if !part:findFirstChild("Burn") then
+		local newBurn = script.Burn:Clone()
+		newBurn.Parent = part
+		newBurn.KillScript.Disabled = false
+		
+		if DEBUG then
+			print("Buring "..hit.Parent.Name)
+		end
+	end
+end
+	
+
+
+--Connections
+--Spread Fire
+if canSpread() then
+	fireArea.Touched:connect(function(hit)
+		if hit.Name == "FireArea" then
+			if hit.Parent.Config.isLit.Value then
+				fireOn()
+			end			
+		elseif hit.Name == "Extinguish" then
+			fireOff()
+		end
+	end)
+end
+--Attack Enemy
+handle.Touched:connect(function(hit)
+	if isGripped() then
+		if hit.Parent then
+			if !game.Players:findFirstChild(hit.Parent.Name) then
+				playAtVelocity(sounds_Thud)
+				
+				--Ignite an Enemy
+				local humanoid = hit.Parent:findFirstChild("Humanoid")
+				if humanoid then
+					burn(hit)
+					--Attack an Enemy
+					if isSwinging() then
+						dealDamage(humanoid)
+					end
+				end
+				
+			end
+		end
+	end
+end)
+
+
+--Run while holding
+while isGripped() do
+	--Do we need to set a bodyVelocity here because of welds?
+	
+	local speed = getSpeed()
+	if speed>=_swingSpeed()
+		if DEBUG then
+			print("Swing!")
+		end
+		
+		swing()
+	end
+	
+	if DEBUG then
+		print("Velocity: "..handle.Velocity.X..", "..handle.Velocity.Y..", "..handle.Velocity.Z..)
+		print("Total Velocity = "..getSpeed())
+	end
+	wait(0.1)
+end
+
