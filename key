@@ -1,0 +1,110 @@
+--[[
+Key
+	Config
+		keyCode - 000
+		isGripped
+		isUsed
+	GripArea
+	Handle
+		BodyPosition - Empty
+		[Sounds - Click, Unlock]
+	
+LockedDoor
+	KeyHole - CanCollide(true)
+	Config
+		keyCode - 000
+	Door - Anchored?
+	
+]]
+
+DEBUG = true
+
+--Variables
+_keyFailDelay = 0.5
+
+--Components
+bin = script.Parent
+handle = bin.Handle
+	sound_Click = handle.Click
+	sound_Unlock = handle.Unlock
+gripArea = bin.GripArea
+config = bin.Config
+	config_isGripped = config.isGripped
+	config_isUsed = config.isUsed
+	config_keyCode = config.keyCode
+door = bin.Door
+	
+--Getters
+function isGripped()
+	return config_isGripped.Value
+end
+
+function isUsed()
+	return config_isUsed.Value
+end
+
+function getKeyCode()
+	return config_keyCode.Value
+end
+
+--Setters
+function setGripped(value)
+	config_isGripped.Value = value
+end
+
+function setUsed(value)
+	config_isUsed.Value = value
+end
+
+--Sounds
+function playTweaked(sound)
+	sound.PlaybackSpeed = 1 + math.random()
+	sound:Play()
+end
+
+--Functions
+function insertKey(hit)
+	if not isUsed() then
+		setUsed(true)
+		config_isGripped:Destroy()
+		hit.CanCollide = false
+		handle:BreakJoints()
+		handle.BodyPosition.Value = hit.Position
+		playTweaked(sounds_Unlock)
+		
+		--UNLOCK THE DOOR (Unanchor?)
+		door.Anchored = false
+	end
+end
+
+--Connections
+deb_keyFail = false
+handle.Touched:connect(function(hit)
+	if not isUsed() then
+		if not deb_keyFail then
+			deb_keyFail = true
+			if hit.Parent then
+				if !game.Players:findFirstChild(hit.Parent.Name) then
+					local config = hit.Parent:findFirstChild("Config")
+					if config then
+						local keyCode = config:FindFirstChild("keyCode")
+						if keyCode then
+							
+							--Right key
+							if keyCode.Value == getKeyCode() then
+								insertKey(hit)
+							
+							--Wrong key
+							else
+								playTweaked(sound_Click)
+							
+							end
+						end
+					end
+				end
+			wait(_keyFailDelay)
+			deb_keyFail = true
+			end
+		end
+	end				
+end)
