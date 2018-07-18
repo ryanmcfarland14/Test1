@@ -1,0 +1,41 @@
+--[[
+Replicated Storage
+	VRAssets
+		Controllers
+			Left
+			Right
+]]
+
+--[[ 
+--CFRAMES
+VR.GetUserCFrame(UserCFrame.Left)
+VR.GetUserCFrame(UserCFrame.Right)
+VR.GetUserCFrame(UserCFrame.Head)
+
+--Disable blue line
+StarterGui:SetCore('VRLaserPointerMode",0)
+]]
+
+DEBUG = true
+
+local player = game.Players.LocalPlayer
+local character = player.CharacterAdded:wait()
+
+
+local VRService = game:GetService("VRService")
+local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
+local repStorage = game:GetService('ReplicatedStorage")
+local vrAssets = repStorage:WaitForChild("VRAssets")
+	local controllerFolder = vrAssets.Controllers
+		local leftHand = controllerFolder.Left:Clone()
+		local rightHand = controllerFolder.Right:Clone()
+
+
+--Print out the keys we are pressing		
+if DEBUG then
+	UserInputService.InputBegan:connect(function(inputobject)
+		print(inputobject.KeyCode.Name, inputobject.UserInputType.name)
+	end)
+end
+	
