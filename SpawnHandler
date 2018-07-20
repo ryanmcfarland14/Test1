@@ -151,4 +151,5 @@ game.Players.PlayerRemoving:connect(function(player)
 end)
 
 
---Handlers
+--Startup
+lobbyLoop()
