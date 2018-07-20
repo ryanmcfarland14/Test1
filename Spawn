@@ -1,0 +1,124 @@
+ --Services
+local rep = game:GetService("ReplicatedStorage")
+local plrs = game:GetService("Players")
+ 
+--Variables -- Defines where a place is easier
+local kspawn = workspace:WaitForChild("KillerSpawn")
+local sspawn = workspace:WaitForChild("SurvivorSpawns")
+local request
+local gametime = 500 -- How long the game will last
+local waitingtime = 5 -- How long the game takes before starting
+ 
+--Tables
+local playersInMatch = {}
+local playersInLobby = {}
+ 
+--Remotes
+local remotes = game.ReplicatedStorage:WaitForChild("Remotes")
+local countdown = remotes:WaitForChild("CountDown")
+
+local DEBUG = true
+
+function debugPrint(text)
+	if DEBUG then
+		print("DEBUG: "..text)
+	end
+end
+ 
+--plr
+game.Players.PlayerAdded:Connect(function(plr)
+	debugPrint(plr.Name.." connected.")
+	table.insert(playersInLobby, plr.Name)--adds player to lobby table
+	local inGame = Instance.new("BoolValue", plr)--Creates bool value so we can know if they are inmatch or inlobby
+	plr.CharacterAdded:Wait()--Waits for character to load
+	plr.Character.Humanoid.Died:Connect(function()
+		debugPrint(plr.." died.")
+		if plr.inGame.Value == true then
+			inGame.Value = false
+			for i,v in pairs(playersInMatch) do
+				if v == plr.Name then
+					wait()
+					table.remove(playersInMatch, plr.Name)
+				end
+				table.insert(playersInLobby, plr.Name)
+			end
+		end
+	end)
+	while wait(0.1) do
+		if(#playersInMatch == 0) then
+			request = "StartCountDown"
+			for Num = waitingtime, 0-1 do
+				countdown:FireAllClients(request, Num)
+			end
+		end
+	end
+end)
+	
+
+
+--Functions
+function FindIndex(Table,Val)
+	for index,v in pairs(Table) do
+		if v == Val then
+			return index
+		end
+	end
+end
+
+
+--Main
+while wait() do
+	if#plrs:GetPlayers() >= 2 then
+		request = "StartCountDown"
+		for Num = waitingtime, 0,-1 do
+			countdown:FireAllClients(request,Num)
+			wait(1)
+		end
+	
+		local allplayers = {}
+		for i,plr in pairs(plrs:GetPlayers()) do
+			table.insert(allplayers,plr)
+		end
+	 
+		local killer = allplayers[math.random(#allplayers)]
+		table.remove(allplayers,FindIndex(allplayers,killer))
+		
+		--Teleport
+		killer.Character:SetPrimaryPartCFrame(kspawn.Spawn.CFrame + Vector3.new(0,3,0))
+		local knife = game.ReplicatedStorage:WaitForChild("Knife"):Clone()
+		knife.Parent = killer.Backpack
+		killer.Character.Humanoid.WalkSpeed = 6
+		
+		--Debug print
+		print("CURRENT PLAYERS")
+		for i, plr in pairs(allplayers) do
+			print(plr.Name)
+		end		
+		print("---------------")
+		
+		for i,plr in pairs(allplayers) do
+			debugPrint(plr.Name.." has spawned.")
+			table.insert(playersInMatch, plr.Name)
+			table.remove(playersInLobby, plr.Name)
+			plr.InGame.Value = true
+			local char = plr.Character or plr.CharacterAdded:Wait()
+			local number = math.random(1,9)
+			local oof = sspawn:FindFirstChild("Spawn"..number)
+			char.HumanoidRootPart.CFrame = oof.CFrame + Vector3.new(0,3,0)
+			char.Humanoid.WalkSpeed = 5.8
+		end
+		 
+		request = "CountDown"
+		for Num = gametime,0,-1 do
+			countdown:FireAllClients(request,Num)
+			wait(1)
+		end
+		for i,plr in pairs(allplayers) do
+			debugPrint("Resetting "..plr.Name..".")
+			plr.Character.Humanoid.Health = 0
+			killer.Character.Humanoid.Health = 0
+		end
+	end
+end
+
+
