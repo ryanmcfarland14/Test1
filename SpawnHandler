@@ -1,0 +1,154 @@
+--[[
+GAME HANDLER
+
+]]
+
+--Variables (OKAY TO EDIT)
+local _gameTime = 500
+local _lobbyTime = 5
+local _playersToStart = 2
+local DEBUG = true --set to true for debug prints
+
+
+--Services 
+repStorage = game:GetService("Replicated Storage")
+local players = game:GetService("Players")
+
+--Components
+local spawn_k = game.Workspace:WaitForChild("KillerSpawn")
+local spawn_s = game.Workspace:WaitForChild("SurvivorSpawn")
+local gameOn = false
+local currentTimer = _lobbyTime --Defaults to the lobby countdown
+
+--Tables
+local playersInMatch = {}
+local killer = nil
+
+
+--Getters
+function getPlayerList()
+	local playerList = {}
+	for i, v in pairs(players:GetChildren()) do
+		table.insert(playerList,v)
+	end
+	return playerList --Returns an array of the current players in the game
+end
+
+--Functions
+function debugPrint(text)
+	if DEBUG then print("DEBUG: "..text) end
+end
+
+function getKiller(playerList)
+	local randomChoice = math.random(1,#playerList)
+	return playerList[randomChoice] --Returns a random player to be the killer
+end
+
+function teleportPlayerTo(player, location) --Teleport the players on a case by case basis
+	player.Character.HumanoidRootPart.CFrame = location.CFrame + Vector3.new(0,3,0)
+end
+
+function pickRandom(table)
+	return table[math.random(#table)] --This returns a random item from any table
+end
+
+function getIndex(array,value)
+	local index = -1
+	for i = 1, #array do
+		if array[i] == value then
+			index = i
+		end
+	end
+	return index --This will return -1 if there is no player in that index
+end
+
+function killAllPlayers(array)
+	for i = 1, #array do
+		local currentPlayer = array[i]
+		currentPlayer.Character.Humanoid.Health = 0
+	end
+	playersInMatch = {}
+	killer = nil
+end
+
+
+--Game Logic
+function lobbyLoop()
+	local inLobby = true
+	while inLobby do --Loop until there are enought players
+		if #players:GetChildren() < _playersToStart then
+			wait(1)
+			debugPrint("Waiting for more players to join...")
+			currentTimer = _lobbyTime
+		else 
+			debugPrint("Enough players have joined!")
+			wait(1)
+			currentTimer = currentTimer - 1
+			if currentTimer <= 0 then
+				inLobby = false
+				startGame() --Start up the game code
+			end
+		end
+	end
+	
+end	
+
+function gameLoop()
+	currentTimer = _gameTime
+	while gameOn do --This way we can always stop the gameLoop by setting this to false
+		wait(1)
+		currentTimer = currentTimer - 1
+		
+		gameOn = #playersInMatch > 1 and killer --The game stays on if there are still more than one player and if the killer is still alive/in the game
+	end
+	
+	debugPrint("The game is over!")
+	killAllPlayers(playersInMatch) --Doesn't kill people in the lobby
+	lobbyLoop() -- Send the players back to the lobby and prepare a new game
+end
+	
+function startGame() --Called when a game is ready to begin
+	--Setup
+	gameOn = true
+	playersInMatch = getPlayerList() --As soon as the game starts, put every person currently playing into the match
+	killer = assignKiller(playersInMatch) --Pass the array so we can choose a player
+	
+	--Teleport to Match
+	teleportPlayerTo(killer, pickRandom(spawn_k)) --SPAWN: Killer
+	for i = 1, #playersInMatch do
+		local currentPlayer = playersInMatch[i]
+		if currentPlayer~=killer then
+			teleportPlayerTo(currentPlayer, pickRandom(spawn_s)) --SPAWN: All players
+		end
+	end
+	
+	gameLoop() --start the clock
+end
+
+function removePlayerFromGame(player)
+	local index = getIndex(playersInMatch,player)
+	if index ~= -1 then
+		table.remove(playersInMatch, index) --take them out of the game
+	end
+end
+
+
+--Connections
+game.Players.PlayerAdded:connect(function(player)
+	debugPrint(player.Name.. " connected.")
+	player.CharacterAdded:connect(function(character)
+		debugPrint(player.Name.. "'s character has spawned")
+		character:WaitForChild("Humanoid").Died:connect(function()
+			debugPrint(player.Name.. " has died!")
+			removePlayerFromGame(player) --Take the player out of the game if they kick the bucket
+		end)
+	end)
+end)
+
+game.Players.PlayerRemoving:connect(function(player)
+	debugPrint(player.Name.. " has left the game.")
+	removePlayerFromGame(player) --NOTE: if the player that left is the killer, the game logic handles that so we don't have to end the game here.
+end)
+
+
+--Handlers
