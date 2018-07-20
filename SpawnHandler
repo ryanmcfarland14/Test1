@@ -16,7 +16,7 @@ local players = game:GetService("Players")
 
 --Components
 local spawn_k = game.Workspace:WaitForChild("KillerSpawn")
-local spawn_s = game.Workspace:WaitForChild("SurvivorSpawn")
+local spawn_s = game.Workspace:WaitForChild("SurvivorSpawns")
 local gameOn = false
 local currentTimer = _lobbyTime --Defaults to the lobby countdown
 
@@ -48,8 +48,12 @@ function teleportPlayerTo(player, location) --Teleport the players on a case by 
 	player.Character.HumanoidRootPart.CFrame = location.CFrame + Vector3.new(0,3,0)
 end
 
-function pickRandom(table)
-	return table[math.random(#table)] --This returns a random item from any table
+function pickRandom(model)
+	local newTable = {}
+	for i, v in pairs(model:GetChildren()) do
+		table.add(newTable, v)
+	end
+	return newTable[math.random(#newTable)] --This returns a random item from any table
 end
 
 function getIndex(array,value)
