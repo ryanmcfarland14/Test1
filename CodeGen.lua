@@ -33,9 +33,19 @@ function isTaken(code)
 	return ret
 end
 
-
+local restrictedCodes = {}
 function getCode()
-	local randomNumber = math.random(60,999)..""
+	local randomNumber
+	local restricted = true
+	while restricted do
+		randomNumber =  math.random(60,999)
+		restricted = false
+		for i = 1, #restrictedCodes do
+			if randomNumber == restrictedCodes[i] then
+				restricted = true
+			end
+		end
+	end
 	local randomLetter1 = string.char(math.random(65,90))
 	local randomLetter2 = string.char(math.random(65,90))
 	while string.len(randomNumber) < 3 do
