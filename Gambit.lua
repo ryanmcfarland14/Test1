@@ -29,6 +29,16 @@ Description:
 	Elemental Cores: 	We can have a spec on each rig that you can swap out to find
 						your favorite. These specs will be elmental abilities that
 						replace cetain attacks (including gambits).
+	Elemental Combos:	This could be a useful feature for squad gameplay. For example,
+						if one rig uses ice on an emeny, a teammate using lightning
+						could detonate their effect on the enemy for extra damage!
+						This will be done using a prime and detonate system. Any
+						detonator can detonate any primer. In general, the primers do
+						more damage over time or lasting effects while the detonators
+						do more immediate damage. Squads should be aware of this and
+						incorporate it into their teamwork. It might not always be the
+						best to detonate a primed target right away if the target is
+						having their damage output reduced for example.
 						
 Gambit Builder Types:
 	1 - Punch
@@ -62,4 +72,146 @@ Elemental Core Types: (Rig benefit, elemental benefit)
 	Lightning 	Increased damage, Stuns
 	Earth		Increased health, Stuns
 	
+Elemental Combos: (Negates effects on the enemy to deal additional damage. The primer and detonator system is universal)
+	Primers		Detonaters
+	Fire		Lightning
+	Ice			Wind
 ]]
+--[[
+GUI Structure
+PlayerGui
+	ScreenGui
+		Frame
+			GambitFrame
+				[SCRIPT]
+				1
+				2
+				3
+				4
+				5
+				Gambit
+
+Gambit File Structure:
+ReplicatedStorage...
+	GambitList
+		TreeName = "type" 			(Named by the name of the tree
+			GambitName = "sequence" (Named by the name of the skill)
+				Values.. 			(Various aspects of the gambit that the script will read. Many are on an if-applicable basis)
+				Damage [Number]
+				Duration [Int] 		(Deals the damage value once every seccond for this long)
+				Slow [Int]			(Slows the enemy for duration)
+				Speed [Int}
+				
+Enemy Structure:
+Model
+	Config
+		Stats
+			MaxHealth
+			Health
+			MaxFuel
+			Fuel
+			Element
+			AttackDelay
+			BaseDamage
+		Ratings
+			Defence
+			Resistance
+			Crit
+		Modifiers
+			Damage
+			Defence
+			AttackSpeed
+			MovementSpeed
+			Resistance
+			Crit
+		State
+			Primed [Boolean]
+			Combat [Boolean]
+		Prime
+			(Insert effects here one at a time, these can be detonated)
+		Debuff
+			(Insert debuffs here with their own countdown before the debuff is lifted)
+		Gambit
+			1 [String]
+			2
+			3
+			4
+			5
+		
+		
+
+]]
+
+--Components
+local player = game.Players.LocalPlayer
+local repStorage = game:GetService("ReplicatedStorage")
+local gambitList = repStorage.Assets.GambitList --Or whatever
+local frame = script.Parent
+local rig = nil --FIND A WAY TO GET THIS
+local gambitReady = false
+
+local build = "" 							--Current Gambit
+
+
+--Functions: Gambit Builder
+function addOn(x) --x must be 1,2, or 3
+	if string.len(build) < 5 then
+		build = build..x
+	end
+end
+
+function removeLast()
+	build = string.sub(build, 1, -2)
+end
+
+function removeAll()
+	build = ""
+end
+
+function checkGambit()
+	local gambit = nil
+	for i, v in pairs(gambitList:GetChildren()) do
+		if v.Value == build then
+		gambit = v
+	end
+	return gambit --returns nil when no gambit is found
+end
+
+--Functions: GUI
+function updateGUI()
+	local length = string.len(build)
+	for i = 1, 5 do
+		local label = frame:FindFirstChild(i)
+		if i <= length then
+			label.Text = string.sub(build,i,i)
+		else
+			label.Text = ""
+		end
+	end
+end
+
+--Functions: Rig
+function updateRig()
+	local length = string.len(build)
+	for i = 1, 5 do
+		local label = rig.Config.Gambit:FindFirstChild(i)
+		if i <= length then
+			label.Value = string.sub(build,i,i)
+		else
+			label.Value = "0"
+		end
+	end
+end
+
+--Functions: Input
+function onInput(x)
+	addOn(x)
+	local gambit = checkGambit()
+	if gambit then
+		gambitReady = true
+		--Show the gambit
+	else
+		gambitReady = false
+	end
+end
+
