@@ -66,14 +66,21 @@ Gambit List: (Note that these work in trees of chained attacks that are unlocked
 	
 	
 Elemental Core Types: (Rig benefit, elemental benefit)
-	Fire  		None, Damage over Time
-	Ice  		Slow Enemies, Debuff
-	Wind  		Speed up attacks, Knockback
-	Lightning 	Increased damage, Stuns
-	Earth		Increased health, Stuns
+	Type		Cast		AOE Ultimate	Rig Benefit		Roll		Difficulty(1-5)
+	Fire		DoT			Cashout DoT		Resistance		Primer		5
+	Ice			Slow		Damage			Defence			Primer		3
+	Lightning	Damage		Stun			Damage			Detonater	1
+	Wind		Speed		Knockback		Movement		Detonater	2
 	
+	Earth		Defence		Heal			Defence			Healer		4
+	Steel		Bleed		Drain			Movement		Solo		4
+	Toxic		Poison		Damage			Health			Primer		2
+	Nuclear		Radiate		Detonate		Movement		Solo		3
+	Shade		Movement	Damage			Movement		Solo		4
+	
+
 Elemental Combos: (Negates effects on the enemy to deal additional damage. The primer and detonator system is universal)
-	Primers		Detonaters
+	Primers		Detonaters		Neither (Solo-based)
 	Fire		Lightning
 	Ice			Wind
 ]]
