@@ -1,5 +1,8 @@
 local Character = script.Parent
 local Humanoid = Character:WaitForChild("Humanoid")
+--Custom Parameters
+	local inCombat = Humanoid.Combat
+	local hovering	= Humanoid.Hovering
 local pose = "Standing"
 
 local userNoUpdateOnLoopSuccess, userNoUpdateOnLoopValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserNoUpdateOnLoop") end)
@@ -439,14 +442,23 @@ end
 -- STATE CHANGE HANDLERS
 
 function onRunning(speed)
+	local thisWalk = "walk"
+	local thisStand = "idle"
+	if hovering.Value then
+		thisWalk = "hover_forward"
+		thisStand = "hover"
+	elseif inCombat.Value then
+		thisWalk = "walk_combat"
+		thisStand = "idle_combat"
+	end
 	if speed > 5 then
 		local scale = 40.0
-		playAnimation("walk", 0.2, Humanoid)
+		playAnimation(thisWalk, 0.2, Humanoid)
 		setAnimationSpeed(speed / scale)
 		pose = "Running"
 	else
 		if emoteNames[currentAnim] == nil then
-			playAnimation("idle", 0.2, Humanoid)
+			playAnimation(thisStand, 0.2, Humanoid)
 			pose = "Standing"
 		end
 	end
@@ -625,4 +637,3 @@ while Character.Parent ~= nil do
 	local _, currentGameTime = wait(0.1)
 	stepAnimate(currentGameTime)
 end
-
